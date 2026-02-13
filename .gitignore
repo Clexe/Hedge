@@ -1,0 +1,41 @@
+# === Secrets ===
+config/secrets.yaml
+.env
+
+# === Data ===
+data/raw/
+data/processed/
+data/cache/
+*.parquet
+*.duckdb
+
+# === Logs ===
+logs/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# === Virtual envs ===
+.venv/
+venv/
+env/
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Jupyter ===
+.ipynb_checkpoints/
