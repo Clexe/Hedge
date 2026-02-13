@@ -1,0 +1,106 @@
+# ==============================================================================
+# Hedge: Momentum Trading System — Default Configuration
+# ==============================================================================
+# NEVER commit real API keys. Use environment variables or config/secrets.yaml
+# (which must be in .gitignore).
+# ==============================================================================
+
+project:
+  name: "hedge"
+  version: "0.1.0"
+  environment: "paper"  # paper | live  — DO NOT change to live without review
+
+# --- Universe ---
+universe:
+  # "sp500" fetches current S&P 500 constituents.
+  # "custom" reads symbols from universe.custom_symbols.
+  source: "sp500"
+  custom_symbols: []
+  # Minimum average dollar volume over lookback_days to keep a ticker.
+  min_dollar_volume: 1_000_000
+  lookback_days: 60
+
+# --- Data Ingestion ---
+data:
+  provider: "yfinance"          # yfinance | alpaca | polygon | csv
+  # How many calendar years of daily bars to keep in the local store.
+  history_years: 5
+  storage_backend: "parquet"    # parquet | duckdb
+  parquet_dir: "data/processed"
+  cache_dir: "data/cache"
+  raw_dir: "data/raw"
+  # Rate-limit delay between successive API calls (seconds).
+  api_delay_sec: 0.25
+
+# --- Momentum Signals ---
+signals:
+  # Primary factor: 12-month return skipping the most recent month (12-1).
+  momentum:
+    fast_period: 21       # ~1 month in trading days
+    slow_period: 252      # ~12 months in trading days
+    skip_period: 21       # skip most recent month (mean-reversion noise)
+  # Volatility-adjusted momentum (return / trailing vol).
+  vol_adjust: true
+  vol_lookback: 63        # ~3 months
+  # Cross-sectional rank: keep the top quantile.
+  top_quantile: 0.10      # top 10 %
+  bottom_quantile: 0.10   # bottom 10 % (for short leg if enabled)
+  long_only: true
+
+# --- Portfolio Construction ---
+portfolio:
+  method: "inv_vol"  # equal_weight | inv_vol | min_variance | risk_parity
+  max_position_pct: 0.05    # no single name > 5 %
+  max_sector_pct: 0.30      # no single sector > 30 %
+  target_volatility: 0.12   # annualized portfolio vol target (12 %)
+  rebalance_frequency: "monthly"  # daily | weekly | monthly
+  # Cash buffer — always keep this fraction un-invested.
+  cash_buffer_pct: 0.02
+  # Turnover constraint: skip rebalance if total turnover < threshold.
+  min_turnover_pct: 0.02
+
+# --- Backtesting ---
+backtest:
+  start_date: "2015-01-01"
+  end_date: null            # null → latest available
+  initial_capital: 100_000
+  commission_bps: 5         # 0.05 % per trade
+  slippage_bps: 10          # 0.10 % market-impact estimate
+  # Spread cost for illiquid names (added on top of slippage).
+  spread_cost_bps: 5
+  benchmark: "SPY"
+
+# --- Execution / Broker ---
+execution:
+  broker: "alpaca"          # alpaca | ibkr | tradier | paper
+  order_type: "market"      # market | limit | vwap
+  limit_offset_bps: 5       # only used when order_type = limit
+  # Maximum dollar value of a single order. Safety guardrail.
+  max_order_usd: 25_000
+  # If True, refuse any order when environment != paper.
+  paper_only: true
+  # Retry failed order submissions this many times.
+  max_retries: 3
+
+# --- Scheduling ---
+schedule:
+  # Cron expression for the nightly pipeline run.
+  # Default: 5:00 AM UTC (= ~1:00 AM ET, well before market open).
+  cron: "0 5 * * 1-5"
+  timezone: "US/Eastern"
+
+# --- Logging ---
+logging:
+  level: "INFO"             # DEBUG | INFO | WARNING | ERROR
+  log_dir: "logs"
+  rotate_mb: 10
+  backup_count: 5
+
+# --- Risk Management ---
+risk:
+  # Hard drawdown limit: flatten everything if breached.
+  max_drawdown_pct: 0.15
+  # Per-position stop-loss (from entry price).
+  stop_loss_pct: 0.10
+  # Correlation guard: skip adding a new name if avg pairwise corr > this.
+  max_avg_correlation: 0.70
