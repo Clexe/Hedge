@@ -2,6 +2,8 @@
 Command-line interface for Hedge.
 
 Usage:
+    python -m hedge demo              # Demo mode — practice with synthetic data
+    python -m hedge demo --full       # Demo with step-by-step walkthrough
     python -m hedge download          # Download / refresh all market data
     python -m hedge signals           # Generate today's momentum signals
     python -m hedge backtest          # Run full historical backtest
@@ -98,6 +100,12 @@ def cmd_run(args: argparse.Namespace) -> None:
         print("\nNo positions generated.")
 
 
+def cmd_demo(args: argparse.Namespace) -> None:
+    """Run demo mode with synthetic data."""
+    from hedge.demo import run_demo
+    run_demo(full=args.full, output=args.output)
+
+
 def cmd_schedule(args: argparse.Namespace) -> None:
     """Start the APScheduler cron loop."""
     from hedge.pipeline.orchestrator import schedule_pipeline
@@ -110,6 +118,20 @@ def main() -> None:
         description="Hedge — Automated Momentum Trading System",
     )
     sub = parser.add_subparsers(dest="command", help="Available commands")
+
+    # demo
+    demo_parser = sub.add_parser(
+        "demo",
+        help="Demo mode — practice with synthetic data (no API keys needed)",
+    )
+    demo_parser.add_argument(
+        "--full", action="store_true",
+        help="Step-by-step walkthrough with explanations",
+    )
+    demo_parser.add_argument(
+        "--output", "-o", type=str, default=None,
+        help="Path to save demo equity curve CSV",
+    )
 
     # download
     sub.add_parser("download", help="Download / refresh market data")
@@ -141,6 +163,7 @@ def main() -> None:
         sys.exit(0)
 
     commands = {
+        "demo": cmd_demo,
         "download": cmd_download,
         "signals": cmd_signals,
         "backtest": cmd_backtest,
