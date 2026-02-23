@@ -87,9 +87,9 @@ def generate_synthetic_prices(
     tickers = tickers or DEMO_TICKERS
     rng = np.random.default_rng(seed)
 
-    n_days = n_years * 252
     end = date.today() - timedelta(days=1)
-    dates = pd.bdate_range(end=end, periods=n_days, freq="B")
+    dates = pd.bdate_range(end=end, periods=n_years * 252, freq="B")
+    n_days = len(dates)
 
     prices: dict[str, pd.Series] = {}
     for ticker in tickers:
